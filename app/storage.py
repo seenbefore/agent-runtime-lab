@@ -62,3 +62,18 @@ def finish_run(
 
     _write_run(run, storage_dir)
     return run
+
+
+def fail_run(
+    run_id: str,
+    error: str,
+    storage_dir: str = "runs",
+) -> Run:
+    run = get_run(run_id, storage_dir=storage_dir)
+    run.status = "failed"
+    run.result = None
+    run.error = error
+    run.updated_at = utc_now()
+
+    _write_run(run, storage_dir)
+    return run

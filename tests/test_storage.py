@@ -1,7 +1,7 @@
 import json
 
 from app.models import Run
-from app.storage import append_step, create_run, finish_run, get_run
+from app.storage import append_step, create_run, fail_run, finish_run, get_run
 
 
 def test_create_run_creates_running_run_file(tmp_path):
@@ -79,3 +79,24 @@ def test_finish_run_marks_run_completed_and_saves_result(tmp_path):
     assert loaded_run.status == "completed"
     assert loaded_run.result == "done"
     assert loaded_run.error is None
+
+
+def test_fail_run_marks_run_failed_and_saves_error(tmp_path):
+    run = create_run("hello", storage_dir=str(tmp_path))
+
+    failed_run = fail_run(
+        run.id,
+        "boom",
+        storage_dir=str(tmp_path),
+    )
+
+    assert failed_run.id == run.id
+    assert failed_run.status == "failed"
+    assert failed_run.result is None
+    assert failed_run.error == "boom"
+    assert failed_run.updated_at != run.updated_at
+
+    loaded_run = get_run(run.id, storage_dir=str(tmp_path))
+    assert loaded_run.status == "failed"
+    assert loaded_run.result is None
+    assert loaded_run.error == "boom"

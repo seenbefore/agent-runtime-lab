@@ -125,3 +125,59 @@ def test_run_agent_fails_when_max_steps_is_exceeded(tmp_path):
         "error",
     ]
     assert loaded_run.steps[-1].data == {"message": "max steps exceeded"}
+
+
+def test_run_agent_fails_when_action_decision_missing_args(tmp_path):
+    run = create_run("read the file", storage_dir=str(tmp_path / "runs"))
+
+    def fake_model(task, steps, allowed_tools):
+        return {"action": "read_file"}
+
+    result = run_agent(
+        run.id,
+        run.task,
+        model=fake_model,
+        allowed_tools={"read_file": lambda **kwargs: None},
+        storage_dir=str(tmp_path / "runs"),
+        workspace_dir=str(tmp_path),
+    )
+
+    assert result.status == "failed"
+    assert result.error == "Invalid decision: action requires args"
+
+    loaded_run = get_run(run.id, storage_dir=str(tmp_path / "runs"))
+    assert [step.type for step in loaded_run.steps] == [
+        "model_decision",
+        "error",
+    ]
+    assert loaded_run.steps[-1].data == {
+        "message": "Invalid decision: action requires args"
+    }
+
+
+def test_run_agent_fails_when_decision_has_no_action_or_final(tmp_path):
+    run = create_run("do something", storage_dir=str(tmp_path / "runs"))
+
+    def fake_model(task, steps, allowed_tools):
+        return {"thought": "I should do something"}
+
+    result = run_agent(
+        run.id,
+        run.task,
+        model=fake_model,
+        allowed_tools={},
+        storage_dir=str(tmp_path / "runs"),
+        workspace_dir=str(tmp_path),
+    )
+
+    assert result.status == "failed"
+    assert result.error == "Invalid decision: expected final or action"
+
+    loaded_run = get_run(run.id, storage_dir=str(tmp_path / "runs"))
+    assert [step.type for step in loaded_run.steps] == [
+        "model_decision",
+        "error",
+    ]
+    assert loaded_run.steps[-1].data == {
+        "message": "Invalid decision: expected final or action"
+    }

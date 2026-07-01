@@ -31,6 +31,16 @@ def run_agent(
             append_step(run_id, "final", {"content": final}, storage_dir=storage_dir)
             return finish_run(run_id, final, storage_dir=storage_dir)
 
+        if "action" not in decision:
+            message = "Invalid decision: expected final or action"
+            append_step(run_id, "error", {"message": message}, storage_dir=storage_dir)
+            return fail_run(run_id, message, storage_dir=storage_dir)
+
+        if "args" not in decision:
+            message = "Invalid decision: action requires args"
+            append_step(run_id, "error", {"message": message}, storage_dir=storage_dir)
+            return fail_run(run_id, message, storage_dir=storage_dir)
+
         tool_name = decision.get("action")
         tool_args = decision.get("args")
         if tool_name not in allowed_tools:

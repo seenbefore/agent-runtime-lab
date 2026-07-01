@@ -1,4 +1,5 @@
 import json
+import urllib.request
 from collections.abc import Callable, Mapping
 from typing import Any
 
@@ -8,6 +9,33 @@ Transport = Callable[[dict[str, Any]], dict[str, Any]]
 
 def _missing_transport(payload: dict[str, Any]) -> dict[str, Any]:
     raise RuntimeError("DeepSeek transport is not configured")
+
+
+def create_deepseek_http_transport(
+    api_key: str,
+    base_url: str = "https://api.deepseek.com",
+    timeout: int = 30,
+) -> Transport:
+    endpoint = f"{base_url.rstrip('/')}/chat/completions"
+
+    def transport(payload: dict[str, Any]) -> dict[str, Any]:
+        body = json.dumps(payload).encode("utf-8")
+        request = urllib.request.Request(
+            endpoint,
+            data=body,
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
+        )
+
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            response_body = response.read().decode("utf-8")
+
+        return json.loads(response_body)
+
+    return transport
 
 
 class DeepSeekClient:

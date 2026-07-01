@@ -3,6 +3,7 @@ import pytest
 from app.deepseek_client import (
     DeepSeekClient,
     build_deepseek_messages,
+    create_deepseek_http_transport,
     parse_deepseek_decision,
 )
 
@@ -50,6 +51,43 @@ def test_deepseek_client_uses_transport_and_returns_parsed_decision():
     assert decision == {"final": "done"}
     assert calls[0]["model"] == "deepseek-chat"
     assert calls[0]["messages"][0]["role"] == "system"
+
+
+def test_deepseek_http_transport_posts_payload(monkeypatch):
+    captured = {}
+
+    class FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, traceback):
+            return None
+
+        def read(self):
+            return b'{"choices":[{"message":{"content":"{\\"final\\": \\"done\\"}"}}]}'
+
+    def fake_urlopen(request, timeout):
+        captured["url"] = request.full_url
+        captured["headers"] = dict(request.header_items())
+        captured["body"] = request.data
+        captured["timeout"] = timeout
+        return FakeResponse()
+
+    monkeypatch.setattr("urllib.request.urlopen", fake_urlopen)
+    transport = create_deepseek_http_transport(
+        api_key="test-key",
+        base_url="https://api.deepseek.com",
+        timeout=12,
+    )
+
+    response = transport({"model": "deepseek-chat", "messages": []})
+
+    assert captured["url"] == "https://api.deepseek.com/chat/completions"
+    assert captured["headers"]["Authorization"] == "Bearer test-key"
+    assert captured["headers"]["Content-type"] == "application/json"
+    assert captured["timeout"] == 12
+    assert b'"model": "deepseek-chat"' in captured["body"]
+    assert response["choices"][0]["message"]["content"] == '{"final": "done"}'
 
 
 def test_parse_deepseek_decision_reads_action_from_response():

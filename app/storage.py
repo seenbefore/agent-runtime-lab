@@ -18,3 +18,12 @@ def create_run(task: str, storage_dir: str = "runs") -> Run:
     )
 
     return run
+    
+def get_run(run_id: str, storage_dir: str = "runs") -> Run:
+    storage_path = Path(storage_dir)
+    run_file = storage_path / f"{run_id}.json"
+
+    raw = run_file.read_text(encoding="utf-8")
+    data = json.loads(raw)
+
+    return Run(**data)

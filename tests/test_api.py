@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from app.main import create_app
+from app.main import build_default_model, create_app
 from app.models import ToolResult
 
 
@@ -79,3 +79,39 @@ def test_get_run_returns_full_trace(tmp_path):
         "model_decision",
         "final",
     ]
+
+
+def test_build_default_model_returns_fallback_without_api_key(monkeypatch):
+    monkeypatch.delenv("DEEPSEEK_API_KEY", raising=False)
+
+    model = build_default_model()
+
+    assert model("task", [], {}) == {"final": "No model configured"}
+
+
+def test_build_default_model_uses_deepseek_when_api_key_exists(monkeypatch):
+    calls = []
+
+    def fake_transport_factory(api_key):
+        calls.append(api_key)
+
+        def fake_transport(payload):
+            return {
+                "choices": [
+                    {
+                        "message": {
+                            "content": '{"final": "from deepseek"}'
+                        }
+                    }
+                ]
+            }
+
+        return fake_transport
+
+    monkeypatch.setenv("DEEPSEEK_API_KEY", "test-key")
+
+    model = build_default_model(transport_factory=fake_transport_factory)
+    decision = model("task", [], {})
+
+    assert calls == ["test-key"]
+    assert decision == {"final": "from deepseek"}

@@ -1,8 +1,10 @@
+import os
 from collections.abc import Callable
 
 from fastapi import FastAPI
 
 from app.agent import ModelFn, run_agent
+from app.deepseek_client import DeepSeekClient, create_deepseek_http_transport
 from app.models import TaskRequest, TaskResponse, ToolResult
 from app.storage import create_run, get_run
 from app.tools import read_file, run_tests, search_code
@@ -10,6 +12,20 @@ from app.tools import read_file, run_tests, search_code
 
 def default_model(task, steps, allowed_tools):
     return {"final": "No model configured"}
+
+
+def build_default_model(
+    transport_factory: Callable[[str], Callable[[dict], dict]] = create_deepseek_http_transport,
+) -> ModelFn:
+    api_key = os.getenv("DEEPSEEK_API_KEY")
+    if not api_key:
+        return default_model
+
+    client = DeepSeekClient(
+        api_key=api_key,
+        transport=transport_factory(api_key),
+    )
+    return client.decide
 
 
 DEFAULT_ALLOWED_TOOLS: dict[str, Callable[..., ToolResult]] = {
@@ -20,12 +36,13 @@ DEFAULT_ALLOWED_TOOLS: dict[str, Callable[..., ToolResult]] = {
 
 
 def create_app(
-    model: ModelFn = default_model,
+    model: ModelFn | None = None,
     allowed_tools: dict[str, Callable[..., ToolResult]] | None = None,
     storage_dir: str = "runs",
     workspace_dir: str = ".",
 ) -> FastAPI:
     app = FastAPI()
+    model_fn = model or build_default_model()
     tools = allowed_tools or DEFAULT_ALLOWED_TOOLS
 
     @app.post("/tasks", response_model=TaskResponse)
@@ -34,7 +51,7 @@ def create_app(
         finished_run = run_agent(
             run.id,
             run.task,
-            model=model,
+            model=model_fn,
             allowed_tools=tools,
             storage_dir=storage_dir,
             workspace_dir=workspace_dir,

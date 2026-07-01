@@ -1,7 +1,7 @@
 import json
 
 from app.models import Run
-from app.storage import create_run, get_run
+from app.storage import create_run, get_run, append_step
 
 
 def test_create_run_creates_running_run_file(tmp_path):
@@ -35,3 +35,24 @@ def test_get_run_reads_existing_run_file(tmp_path):
     assert loaded_run.steps == run.steps
     assert loaded_run.result == run.result
     assert loaded_run.error == run.error
+
+def test_append_step_adds_step_to_run_file(tmp_path):
+    run = create_run("hello", storage_dir=str(tmp_path))
+    data = {"action": "read_file", "args": {"path": "README.md"}}
+
+    step = append_step(
+        run.id,
+        "model_decision",
+        data,
+        storage_dir=str(tmp_path),
+    )
+
+    assert step.index == 1
+    assert step.type == "model_decision"
+    assert step.data == data
+
+    loaded_run = get_run(run.id, storage_dir=str(tmp_path))
+    assert len(loaded_run.steps) == 1
+    assert loaded_run.steps[0].index == 1
+    assert loaded_run.steps[0].type == "model_decision"
+    assert loaded_run.steps[0].data == data

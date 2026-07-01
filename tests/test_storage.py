@@ -1,7 +1,7 @@
 import json
 
 from app.models import Run
-from app.storage import create_run, get_run, append_step
+from app.storage import append_step, create_run, finish_run, get_run
 
 
 def test_create_run_creates_running_run_file(tmp_path):
@@ -23,6 +23,7 @@ def test_create_run_creates_running_run_file(tmp_path):
     assert data["id"] == run.id
     assert data["task"] == task
 
+
 def test_get_run_reads_existing_run_file(tmp_path):
     run = create_run("hello", storage_dir=str(tmp_path))
 
@@ -35,6 +36,7 @@ def test_get_run_reads_existing_run_file(tmp_path):
     assert loaded_run.steps == run.steps
     assert loaded_run.result == run.result
     assert loaded_run.error == run.error
+
 
 def test_append_step_adds_step_to_run_file(tmp_path):
     run = create_run("hello", storage_dir=str(tmp_path))
@@ -56,3 +58,24 @@ def test_append_step_adds_step_to_run_file(tmp_path):
     assert loaded_run.steps[0].index == 1
     assert loaded_run.steps[0].type == "model_decision"
     assert loaded_run.steps[0].data == data
+
+
+def test_finish_run_marks_run_completed_and_saves_result(tmp_path):
+    run = create_run("hello", storage_dir=str(tmp_path))
+
+    finished_run = finish_run(
+        run.id,
+        "done",
+        storage_dir=str(tmp_path),
+    )
+
+    assert finished_run.id == run.id
+    assert finished_run.status == "completed"
+    assert finished_run.result == "done"
+    assert finished_run.error is None
+    assert finished_run.updated_at != run.updated_at
+
+    loaded_run = get_run(run.id, storage_dir=str(tmp_path))
+    assert loaded_run.status == "completed"
+    assert loaded_run.result == "done"
+    assert loaded_run.error is None

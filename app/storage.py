@@ -47,3 +47,18 @@ def append_step(
     _write_run(run, storage_dir)
 
     return step
+
+
+def finish_run(
+    run_id: str,
+    result: str,
+    storage_dir: str = "runs",
+) -> Run:
+    run = get_run(run_id, storage_dir=storage_dir)
+    run.status = "completed"
+    run.result = result
+    run.error = None
+    run.updated_at = utc_now()
+
+    _write_run(run, storage_dir)
+    return run

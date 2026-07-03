@@ -1,3 +1,13 @@
+"""
+Agent Runtime 的共享数据模型。
+
+本模块定义 API、Storage、Agent Loop 和 Tools 之间共同使用的数据契约：
+TaskRequest/TaskResponse 描述 HTTP 输入输出，Run/Step 描述一次可观察执行，
+ToolResult 描述工具调用结果。
+
+边界：本模块只定义结构和基础默认值，不负责存储、工具执行或模型调用。
+"""
+
 from datetime import datetime, timezone
 from typing import Any, Literal
 

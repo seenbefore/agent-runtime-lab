@@ -1,3 +1,12 @@
+"""
+Agent Runtime 暴露给模型的本地工具集合。
+
+本模块提供只读/验证类工具：读取文件、搜索代码、运行测试。
+所有工具都返回统一的 ToolResult，方便 Agent Loop 记录 tool_result trace。
+
+边界：第一版工具不写文件、不修改代码，也不执行任意 shell 命令。
+"""
+
 import subprocess
 import sys
 from pathlib import Path

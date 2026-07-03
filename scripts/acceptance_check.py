@@ -1,3 +1,10 @@
+"""
+本地端到端验收脚本。
+
+脚本会对正在运行的 FastAPI 服务执行 `POST /tasks`，再通过返回的
+trace_url 执行 `GET /runs/{run_id}`，最后打印完整 Run 和 Step 类型序列。
+"""
+
 import argparse
 import json
 import urllib.request

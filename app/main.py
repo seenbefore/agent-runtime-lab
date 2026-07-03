@@ -1,3 +1,12 @@
+"""
+FastAPI 应用入口。
+
+本模块负责组装默认模型、默认工具、Run 存储目录和 HTTP API：
+`POST /tasks` 用于同步执行一次 Agent Run，`GET /runs/{run_id}` 用于查看完整 trace。
+
+边界：业务执行交给 agent.py，持久化交给 storage.py，工具实现交给 tools.py。
+"""
+
 import os
 from collections.abc import Callable
 

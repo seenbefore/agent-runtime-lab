@@ -1,3 +1,13 @@
+"""
+最小 Agent Loop。
+
+本模块负责驱动一次 Run：调用模型获得 decision，记录 model_decision，
+校验协议和 allowed_tools，执行工具，记录 tool_call/tool_result/final/error，
+并把 Run 标记为 completed 或 failed。
+
+边界：本模块不实现具体工具、不调用 DeepSeek HTTP，也不关心 Run 的底层存储格式。
+"""
+
 from collections.abc import Callable
 from typing import Any
 

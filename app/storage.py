@@ -1,3 +1,13 @@
+"""
+Run/Step 的 JSON 文件存储层。
+
+本模块负责创建、读取、更新 Run，并把每个 Run 持久化到
+`runs/{run_id}.json` 这类 JSON 文件中。
+
+边界：Agent Loop 只通过本模块访问 Run，不直接读写 JSON 文件；
+本模块不决定 Agent 行为，也不执行工具。
+"""
+
 import json
 from pathlib import Path
 from typing import Any

@@ -1,3 +1,12 @@
+"""
+DeepSeek 的最小适配层。
+
+本模块负责把 task、历史 steps 和 allowed_tools 转成 DeepSeek/OpenAI-compatible
+chat messages，并把模型响应解析回 Agent decision。
+
+边界：解析和 HTTP transport 被分开，测试可以注入 fake transport，避免真实联网。
+"""
+
 import json
 import urllib.request
 from collections.abc import Callable, Mapping
